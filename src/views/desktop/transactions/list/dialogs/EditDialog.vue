@@ -269,7 +269,8 @@
                                     <date-time-select
                                         :readonly="mode === TransactionEditPageMode.View"
                                         :disabled="loading || submitting || recognizing || (mode === TransactionEditPageMode.Edit && transaction.type === TransactionType.ModifyBalance)"
-                                        :label="tt('Transaction Time')"
+                                        :label="showTransactionTimeInEditPage ? tt('Transaction Time') : tt('Transaction Date')"
+                                        :date-only="!showTransactionTimeInEditPage"
                                         :timezone-utc-offset="transaction.utcOffset"
                                         :model-value="transaction.time"
                                         @update:model-value="updateTransactionTime"
@@ -283,7 +284,7 @@
                                         v-model:type="transaction.scheduledFrequencyType"
                                         v-model="transaction.scheduledFrequency" />
                                 </v-col>
-                                <v-col cols="12" md="6" v-if="type === TransactionEditPageType.Transaction || (type === TransactionEditPageType.Template && transaction instanceof TransactionTemplate && transaction.templateType === TemplateType.Schedule.type)">
+                                <v-col cols="12" md="6" v-if="(type === TransactionEditPageType.Transaction && showTransactionTimeInEditPage) || (type === TransactionEditPageType.Template && transaction instanceof TransactionTemplate && transaction.templateType === TemplateType.Schedule.type)">
                                     <v-autocomplete
                                         class="transaction-edit-timezone"
                                         item-title="displayNameWithUtcOffset"
@@ -698,6 +699,8 @@ const sourceAmountColor = computed<string | undefined>(() => {
 
     return undefined;
 });
+
+const showTransactionTimeInEditPage = computed<boolean>(() => settingsStore.appSettings.showTransactionTimeInEditPage);
 
 const isTransactionModified = computed<boolean>(() => {
     if (mode.value === TransactionEditPageMode.Add) {

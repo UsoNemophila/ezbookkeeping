@@ -230,6 +230,12 @@
                         </div>
 
                         <div class="setting-item">
+                            <span>{{ tt('Show Transaction Time') }}</span>
+                            <v-spacer/>
+                            <v-switch class="ms-4" v-model="isShowTransactionTimeInEditPage"/>
+                        </div>
+
+                        <div class="setting-item">
                             <span>{{ tt('Transaction Picture Upload Quality') }}</span>
                             <v-spacer/>
                             <v-select
@@ -470,6 +476,7 @@ const {
     defaultKeywordMatchModeInTransactionListPage,
     autoSaveTransactionDraft,
     isAutoGetCurrentGeoLocation,
+    isShowTransactionTimeInEditPage,
     transactionPictureQuality,
     isAlwaysRequireConfirmationOfClipboardContentBeforeSubmission,
     isAutoUploadTransactionPictureForAIRecognition,

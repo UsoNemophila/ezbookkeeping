@@ -276,6 +276,15 @@
 
             <f7-list-item>
                 <template #after-title>
+                    {{ tt('Show Transaction Time') }}
+                </template>
+                <template #after>
+                    <f7-toggle :checked="isShowTransactionTimeInEditPage" @toggle:change="isShowTransactionTimeInEditPage = $event"></f7-toggle>
+                </template>
+            </f7-list-item>
+
+            <f7-list-item>
+                <template #after-title>
                     {{ tt('Always Show Transaction Pictures') }}
                 </template>
                 <template #after>
@@ -486,6 +495,7 @@ const {
     defaultKeywordMatchModeInTransactionListPage,
     autoSaveTransactionDraft,
     isAutoGetCurrentGeoLocation,
+    isShowTransactionTimeInEditPage,
     transactionPictureQuality,
     isAlwaysRequireConfirmationOfClipboardContentBeforeSubmission,
     isAutoUploadTransactionPictureForAIRecognition,

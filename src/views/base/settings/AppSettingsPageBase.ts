@@ -145,6 +145,11 @@ export function useAppSettingPageBase() {
         set: (value) => settingsStore.setAutoGetCurrentGeoLocation(value)
     });
 
+    const isShowTransactionTimeInEditPage = computed<boolean>({
+        get: () => settingsStore.appSettings.showTransactionTimeInEditPage,
+        set: (value) => settingsStore.setShowTransactionTimeInEditPage(value)
+    });
+
     const transactionPictureQuality = computed<number>({
         get: () => settingsStore.appSettings.transactionPictureQuality,
         set: (value: number) => settingsStore.setTransactionPictureQuality(value)
@@ -249,6 +254,7 @@ export function useAppSettingPageBase() {
         defaultKeywordMatchModeInTransactionListPage,
         autoSaveTransactionDraft,
         isAutoGetCurrentGeoLocation,
+        isShowTransactionTimeInEditPage,
         currencySortByInExchangeRatesPage,
         chartColorSchemeContent,
         accountsIncludedInHomePageOverviewDisplayContent,

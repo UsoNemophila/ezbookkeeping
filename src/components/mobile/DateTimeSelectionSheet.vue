@@ -9,7 +9,7 @@
             </div>
             <div class="right">
                 <f7-link :aria-label="mode === 'time' ? tt('Date') : tt('Time')"
-                         :icon-f7="mode === 'time' ? 'calendar' : 'clock'" @click="switchMode"></f7-link>
+                         :icon-f7="mode === 'time' ? 'calendar' : 'clock'" @click="switchMode" v-if="!dateOnly"></f7-link>
                 <f7-button round fill icon-f7="checkmark_alt" :aria-label="tt('Apply')" @click="confirm"></f7-button>
             </div>
         </f7-toolbar>
@@ -125,6 +125,7 @@ const props = defineProps<{
     timezoneUtcOffset: number;
     initMode?: string;
     clearable?: boolean;
+    dateOnly?: boolean;
     show: boolean;
 }>();
 
@@ -164,7 +165,7 @@ let resetTimePickerItemPositionItemClass: string | undefined = undefined;
 let resetTimePickerItemPositionItemsLastOffsetTop: number | undefined = undefined;
 let resetTimePickerItemPositionCheckedFrames: number | undefined = undefined;
 
-const mode = ref<string>(props.initMode || 'time');
+const mode = ref<string>(props.dateOnly ? 'date' : (props.initMode || 'time'));
 const dateTime = ref<Date>(getLocalDatetimeFromSameDateTimeOfUnixTime(props.modelValue || getCurrentUnixTime(), props.timezoneUtcOffset));
 const timePickerContainerHeight = ref<number | undefined>(undefined);
 const timePickerItemHeight = ref<number | undefined>(undefined);
@@ -427,7 +428,7 @@ function delayCheckAndResetTimePickerItemPosition(): void {
 }
 
 function onSheetOpen(): void {
-    mode.value = props.initMode || 'time';
+    mode.value = props.dateOnly ? 'date' : (props.initMode || 'time');
 
     if (props.modelValue) {
         dateTime.value = getLocalDatetimeFromSameDateTimeOfUnixTime(props.modelValue, props.timezoneUtcOffset);

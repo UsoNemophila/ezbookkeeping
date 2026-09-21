@@ -248,14 +248,15 @@
                 v-if="pageTypeAndMode?.type === TransactionEditPageType.Transaction"
             >
                 <template #header>
-                    <div class="transaction-edit-datetime-header" @click="showDateTimeDialog('time')">{{ tt('Transaction Time') }}</div>
+                    <div class="transaction-edit-datetime-header" @click="showDateTimeDialog(showTransactionTimeInEditPage ? 'time' : 'date')">{{ showTransactionTimeInEditPage ? tt('Transaction Time') : tt('Transaction Date') }}</div>
                 </template>
                 <template #title>
                     <div class="transaction-edit-datetime-title">
-                        <div @click="showDateTimeDialog('date')">{{ transactionDisplayDate }}</div>&nbsp;<div class="transaction-edit-datetime-time" @click="showDateTimeDialog('time')">{{ transactionDisplayTime }}</div>
+                        <div @click="showDateTimeDialog('date')">{{ transactionDisplayDate }}</div><template v-if="showTransactionTimeInEditPage">&nbsp;<div class="transaction-edit-datetime-time" @click="showDateTimeDialog('time')">{{ transactionDisplayTime }}</div></template>
                     </div>
                 </template>
                 <date-time-selection-sheet :init-mode="transactionDateTimeSheetMode"
+                                           :date-only="!showTransactionTimeInEditPage"
                                            :timezone-utc-offset="transaction.utcOffset"
                                            :model-value="transaction.time"
                                            v-model:show="showTransactionDateTimeSheet"
@@ -312,7 +313,7 @@
                 class="list-item-with-header-and-title list-item-title-hide-overflow list-item-no-item-after"
                 :class="{ 'disabled': mode === TransactionEditPageMode.Edit && transaction.type === TransactionType.ModifyBalance, 'readonly': mode === TransactionEditPageMode.View }"
                 :header="tt('Transaction Timezone')"
-                v-if="pageTypeAndMode?.type === TransactionEditPageType.Transaction || (pageTypeAndMode?.type === TransactionEditPageType.Template && transaction instanceof TransactionTemplate && transaction.templateType === TemplateType.Schedule.type)"
+                v-if="(pageTypeAndMode?.type === TransactionEditPageType.Transaction && showTransactionTimeInEditPage) || (pageTypeAndMode?.type === TransactionEditPageType.Template && transaction instanceof TransactionTemplate && transaction.templateType === TemplateType.Schedule.type)"
                 @click="showTimezonePopup = true"
             >
                 <template #title>
@@ -728,6 +729,8 @@ const destinationAmountClass = computed<Record<string, boolean>>(() => {
 
     return classes;
 });
+
+const showTransactionTimeInEditPage = computed<boolean>(() => settingsStore.appSettings.showTransactionTimeInEditPage);
 
 const transactionDisplayDate = computed<string>(() => {
     if (mode.value !== TransactionEditPageMode.View || !showTimeInDefaultTimezone.value) {

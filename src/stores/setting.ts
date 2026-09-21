@@ -302,6 +302,12 @@ export const useSettingsStore = defineStore('settings', () => {
         updateUserApplicationCloudSettingValue('autoGetCurrentGeoLocation', value);
     }
 
+    function setShowTransactionTimeInEditPage(value: boolean): void {
+        updateApplicationSettingsValue('showTransactionTimeInEditPage', value);
+        appSettings.value.showTransactionTimeInEditPage = value;
+        updateUserApplicationCloudSettingValue('showTransactionTimeInEditPage', value);
+    }
+
     function setAlwaysShowTransactionPicturesInMobileTransactionEditPage(value: boolean): void {
         updateApplicationSettingsValue('alwaysShowTransactionPicturesInMobileTransactionEditPage', value);
         appSettings.value.alwaysShowTransactionPicturesInMobileTransactionEditPage = value;
@@ -635,6 +641,7 @@ export const useSettingsStore = defineStore('settings', () => {
         setQuickAddButtonActionInMobileTransactionEditPage,
         setAutoSaveTransactionDraft,
         setAutoGetCurrentGeoLocation,
+        setShowTransactionTimeInEditPage,
         setAlwaysShowTransactionPicturesInMobileTransactionEditPage,
         setTransactionPictureQuality,
         // -- AI Clipboard Text Recognition

@@ -21,6 +21,7 @@
                               v-model="dateTime">
             </date-time-picker>
             <div class="date-time-select-time-picker-container"
+                 v-if="!dateOnly"
                  @focusin="onFocused"
                  @click="onFocused"
                  @keydown="onKeyDown">
@@ -104,6 +105,7 @@ const props = defineProps<{
     readonly?: boolean;
     clearable?: boolean;
     label?: string;
+    dateOnly?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -120,6 +122,7 @@ const {
     getShortDateFormatOrder,
     parseDateTimeFromLongDateTime,
     parseDateTimeFromShortDateTime,
+    formatDateTimeToLongDate,
     formatDateTimeToLongDateTime
 } = useI18n();
 
@@ -162,7 +165,14 @@ const dateTime = computed<Date>({
     }
 });
 
-const displayTime = computed<string>(() => props.emptyValue ? tt('None') : formatDateTimeToLongDateTime(parseDateTimeFromUnixTimeWithTimezoneOffset(props.modelValue, props.timezoneUtcOffset)));
+const displayTime = computed<string>(() => {
+    if (props.emptyValue) {
+        return tt('None');
+    }
+
+    const dateTime = parseDateTimeFromUnixTimeWithTimezoneOffset(props.modelValue, props.timezoneUtcOffset);
+    return props.dateOnly ? formatDateTimeToLongDate(dateTime) : formatDateTimeToLongDateTime(dateTime);
+});
 
 const hourItems = computed<TimePickerValue[]>(() => generateAllHours(1, isHourTwoDigits.value));
 const minuteItems = computed<TimePickerValue[]>(() => generateAllMinutesOrSeconds(1, isMinuteTwoDigits.value));
