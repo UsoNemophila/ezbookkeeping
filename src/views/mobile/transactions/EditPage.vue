@@ -102,7 +102,7 @@
                 class="list-item-with-header-and-title list-item-title-hide-overflow"
                 key="expenseCategorySelection"
                 link="#" no-chevron
-                :class="{ 'disabled': !hasVisibleExpenseCategories, 'readonly': mode === TransactionEditPageMode.View }"
+                :class="{ 'readonly': mode === TransactionEditPageMode.View }"
                 :header="tt('Category')"
                 @click="showCategorySheet = true"
                 v-if="transaction.type === TransactionType.Expense"
@@ -124,6 +124,9 @@
                                            secondary-icon-field="icon" secondary-icon-type-field="iconType" secondary-icon-type="category" secondary-color-field="color"
                                            secondary-hidden-field="hidden"
                                            :enable-filter="true" :filter-placeholder="tt('Find category')" :filter-no-items-text="tt('No available category')"
+                                           :add-new-item-text="mode === TransactionEditPageMode.View ? '' : tt('Add Category')"
+                                           :add-preset-items-text="mode === TransactionEditPageMode.View ? '' : tt('Use Preset Categories')"
+                                           @add-new-item="onAddNewCategory($event)" @add-preset-items="onAddPresetCategories"
                                            :items="allCategories[CategoryType.Expense]"
                                            v-model:show="showCategorySheet"
                                            v-model="transaction.expenseCategoryId">
@@ -134,7 +137,7 @@
                 class="list-item-with-header-and-title list-item-title-hide-overflow"
                 key="incomeCategorySelection"
                 link="#" no-chevron
-                :class="{ 'disabled': !hasVisibleIncomeCategories, 'readonly': mode === TransactionEditPageMode.View }"
+                :class="{ 'readonly': mode === TransactionEditPageMode.View }"
                 :header="tt('Category')"
                 @click="showCategorySheet = true"
                 v-if="transaction.type === TransactionType.Income"
@@ -156,6 +159,9 @@
                                            secondary-icon-field="icon" secondary-icon-type-field="iconType" secondary-icon-type="category" secondary-color-field="color"
                                            secondary-hidden-field="hidden"
                                            :enable-filter="true" :filter-placeholder="tt('Find category')" :filter-no-items-text="tt('No available category')"
+                                           :add-new-item-text="mode === TransactionEditPageMode.View ? '' : tt('Add Category')"
+                                           :add-preset-items-text="mode === TransactionEditPageMode.View ? '' : tt('Use Preset Categories')"
+                                           @add-new-item="onAddNewCategory($event)" @add-preset-items="onAddPresetCategories"
                                            :items="allCategories[CategoryType.Income]"
                                            v-model:show="showCategorySheet"
                                            v-model="transaction.incomeCategoryId">
@@ -166,7 +172,7 @@
                 class="list-item-with-header-and-title list-item-title-hide-overflow"
                 key="transferCategorySelection"
                 link="#" no-chevron
-                :class="{ 'disabled': !hasVisibleTransferCategories, 'readonly': mode === TransactionEditPageMode.View }"
+                :class="{ 'readonly': mode === TransactionEditPageMode.View }"
                 :header="tt('Category')"
                 @click="showCategorySheet = true"
                 v-if="transaction.type === TransactionType.Transfer"
@@ -188,6 +194,9 @@
                                            secondary-icon-field="icon" secondary-icon-type-field="iconType" secondary-icon-type="category" secondary-color-field="color"
                                            secondary-hidden-field="hidden"
                                            :enable-filter="true" :filter-placeholder="tt('Find category')" :filter-no-items-text="tt('No available category')"
+                                           :add-new-item-text="mode === TransactionEditPageMode.View ? '' : tt('Add Category')"
+                                           :add-preset-items-text="mode === TransactionEditPageMode.View ? '' : tt('Use Preset Categories')"
+                                           @add-new-item="onAddNewCategory($event)" @add-preset-items="onAddPresetCategories"
                                            :items="allCategories[CategoryType.Transfer]"
                                            v-model:show="showCategorySheet"
                                            v-model="transaction.transferCategoryId">
@@ -510,6 +519,13 @@
             </f7-list>
         </f7-popover>
 
+        <category-creation-sheet :mode="categoryCreationMode"
+                                 :category-type="currentCategoryType"
+                                 :parent-id="categoryCreationParentId"
+                                 :parent-icon="categoryCreationParentIcon"
+                                 :parent-color="categoryCreationParentColor"
+                                 v-model:show="showCategoryCreationSheet"
+                                 @category:saved="onCategoryCreated" />
         <a-i-text-recognition-sheet :initial-text="pastedText" v-model:show="showAITextRecognitionSheet" @text:confirm="recognizeText" />
         <f7-photo-browser ref="pictureBrowser" type="popup" navbar-of-text="/"
                           :navbar-show-count="true" :exposition="false"
@@ -519,6 +535,8 @@
 </template>
 
 <script setup lang="ts">
+import CategoryCreationSheet from '@/components/mobile/CategoryCreationSheet.vue';
+
 import { ref, computed, useTemplateRef } from 'vue';
 import type { PhotoBrowser, Router } from 'framework7/types';
 
@@ -731,6 +749,23 @@ const destinationAmountClass = computed<Record<string, boolean>>(() => {
 });
 
 const showTransactionTimeInEditPage = computed<boolean>(() => settingsStore.appSettings.showTransactionTimeInEditPage);
+
+const showCategoryCreationSheet = ref<boolean>(false);
+const categoryCreationMode = ref<'add' | 'preset'>('add');
+const categoryCreationParentId = ref<string | undefined>(undefined);
+const categoryCreationParentIcon = ref<string | undefined>(undefined);
+const categoryCreationParentColor = ref<string | undefined>(undefined);
+
+// the category type matching the transaction type currently being edited, used by the inline category creation sheet
+const currentCategoryType = computed<CategoryType>(() => {
+    if (transaction.value.type === TransactionType.Income) {
+        return CategoryType.Income;
+    } else if (transaction.value.type === TransactionType.Transfer) {
+        return CategoryType.Transfer;
+    } else {
+        return CategoryType.Expense;
+    }
+});
 
 const transactionDisplayDate = computed<string>(() => {
     if (mode.value !== TransactionEditPageMode.View || !showTimeInDefaultTimezone.value) {
@@ -1353,6 +1388,39 @@ function updateGeoLocation(forceUpdate: boolean): void {
 function clearGeoLocation(): void {
     geoLocationStatus.value = null;
     transaction.value.removeGeoLocation();
+}
+
+function onAddNewCategory(parentKey: unknown): void {
+    if (!parentKey) { // a transaction is bound to a secondary category, so a parent is required
+        return;
+    }
+
+    const parentId = parentKey as string;
+    const parentCategory = (allCategories.value[currentCategoryType.value] ?? []).find(category => category.id === parentId);
+
+    categoryCreationMode.value = 'add';
+    categoryCreationParentId.value = parentId;
+    categoryCreationParentIcon.value = parentCategory?.icon;
+    categoryCreationParentColor.value = parentCategory?.color;
+    showCategoryCreationSheet.value = true;
+}
+
+function onAddPresetCategories(): void {
+    categoryCreationMode.value = 'preset';
+    categoryCreationParentId.value = undefined;
+    categoryCreationParentIcon.value = undefined;
+    categoryCreationParentColor.value = undefined;
+    showCategoryCreationSheet.value = true;
+}
+
+function onCategoryCreated(e: { message: string }): void {
+    transactionCategoriesStore.loadAllCategories({ force: true }).then(() => {
+        showToast(e.message);
+    }).catch(error => {
+        if (!error.processed) {
+            showToast(error.message || error);
+        }
+    });
 }
 
 function showDateTimeDialog(sheetMode: string): void {

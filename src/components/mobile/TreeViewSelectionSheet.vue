@@ -19,6 +19,12 @@
             <f7-list class="no-margin-top no-margin-bottom" v-if="!filteredItems || !filteredItems.length">
                 <f7-list-item :title="filterNoItemsText"></f7-list-item>
             </f7-list>
+            <f7-list class="no-margin-top no-margin-bottom"
+                     v-if="addPresetItemsText && (!items || !items.length)">
+                <f7-list-item link="#" no-chevron class="text-color-primary"
+                              :title="addPresetItemsText"
+                              @click="onAddPresetItemsClicked"></f7-list-item>
+            </f7-list>
             <f7-treeview class="tree-view-selection-treeview">
                 <f7-treeview-item item-toggle
                                   :opened="isPrimaryItemHasSecondaryValue(item)"
@@ -43,6 +49,12 @@
                                       :color="secondaryColorField ? (subItem as Record<string, unknown>)[secondaryColorField] : undefined" v-if="secondaryIconField"></ItemIcon>
                         </template>
                     </f7-treeview-item>
+
+                    <f7-treeview-item selectable class="text-color-primary"
+                                      :label="addNewItemText"
+                                      v-if="addNewItemText"
+                                      @click="onAddNewItemClicked(item)">
+                    </f7-treeview-item>
                 </f7-treeview-item>
             </f7-treeview>
         </f7-page-content>
@@ -64,6 +76,8 @@ import { type Framework7Dom, scrollSheetToTop } from '@/lib/ui/mobile.ts';
 
 interface MobileTwoLevelItemSelectionBaseProps extends TwoLevelItemSelectionBaseProps {
     show: boolean;
+    addNewItemText?: string;
+    addPresetItemsText?: string;
 }
 
 const props = defineProps<MobileTwoLevelItemSelectionBaseProps>();
@@ -71,6 +85,8 @@ const props = defineProps<MobileTwoLevelItemSelectionBaseProps>();
 const emit = defineEmits<{
     (e: 'update:modelValue', value: unknown): void;
     (e: 'update:show', value: boolean): void;
+    (e: 'addNewItem', parentKey: unknown): void;
+    (e: 'addPresetItems'): void;
 }>();
 
 const { tt, ti } = useI18n();
@@ -129,6 +145,17 @@ function isPrimaryItemHasSecondaryValue(primaryItem: Record<string, unknown>): b
     }
 
     return false;
+}
+
+function onAddPresetItemsClicked(): void {
+    emit('update:show', false);
+    emit('addPresetItems');
+}
+
+// closes this sheet before emitting, so the caller opens its own sheet without stacking two sheets
+function onAddNewItemClicked(primaryItem: Record<string, unknown>): void {
+    emit('update:show', false);
+    emit('addNewItem', props.primaryKeyField ? primaryItem[props.primaryKeyField] : undefined);
 }
 
 function onSecondaryItemClicked(subItem: unknown): void {
