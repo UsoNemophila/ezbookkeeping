@@ -41,6 +41,12 @@
             <div class="text-body-large mx-4 mt-3 mb-2" v-show="!filteredItems || !filteredItems.length">
                 {{ filterNoItemsText }}
             </div>
+            <v-list class="two-column-list-actions" v-if="addPresetItemsText || addNewItemText">
+                <v-list-item class="text-primary" v-if="addPresetItemsText && (!items || !items.length)"
+                             @click="emit('addPresetItems')">{{ addPresetItemsText }}</v-list-item>
+                <v-list-item class="text-primary" v-if="addNewItemText"
+                             @click="emit('addNewItem')">{{ addNewItemText }}</v-list-item>
+            </v-list>
             <div ref="dropdownMenu" class="two-column-list-container" v-show="filteredItems && filteredItems.length">
                 <div class="primary-list-container">
                     <v-list :class="{ 'list-item-with-header': !!primaryHeaderField, 'list-item-with-footer': !!primaryFooterField }">
@@ -125,12 +131,16 @@ interface DesktopTwoColumnListItemSelectionProps extends CommonTwoColumnListItem
     customSelectionSecondaryText?: string;
     noItemText?: string;
     autoUpdateMenuPosition?: boolean;
+    addNewItemText?: string;
+    addPresetItemsText?: string;
 }
 
 const props = defineProps<DesktopTwoColumnListItemSelectionProps>();
 
 const emit = defineEmits<{
     (e: 'update:modelValue', value: unknown): void;
+    (e: 'addNewItem'): void;
+    (e: 'addPresetItems'): void;
 }>();
 
 const { tt, ti } = useI18n();

@@ -154,8 +154,11 @@
                                                                    secondary-icon-field="icon" secondary-icon-type-field="iconType" secondary-icon-type="category" secondary-color-field="color"
                                                                    secondary-hidden-field="hidden"
                                                                    :readonly="mode === TransactionEditPageMode.View"
-                                                                   :disabled="loading || submitting || recognizing || !hasVisibleExpenseCategories"
+                                                                   :disabled="loading || submitting || recognizing"
                                                                    :enable-filter="true" :filter-placeholder="tt('Find category')" :filter-no-items-text="tt('No available category')"
+                                                                   :add-new-item-text="mode === TransactionEditPageMode.View ? '' : tt('Add Category')"
+                                                                   :add-preset-items-text="mode === TransactionEditPageMode.View ? '' : tt('Use Preset Categories')"
+                                                                   @add-new-item="onAddNewCategory" @add-preset-items="onAddPresetCategories"
                                                                    :show-selection-primary-text="true"
                                                                    :custom-selection-primary-text="getTransactionPrimaryCategoryName(transaction.expenseCategoryId, allCategories[CategoryType.Expense])"
                                                                    :custom-selection-secondary-text="getTransactionSecondaryCategoryName(transaction.expenseCategoryId, allCategories[CategoryType.Expense])"
@@ -178,8 +181,11 @@
                                                                    secondary-icon-field="icon" secondary-icon-type-field="iconType" secondary-icon-type="category" secondary-color-field="color"
                                                                    secondary-hidden-field="hidden"
                                                                    :readonly="mode === TransactionEditPageMode.View"
-                                                                   :disabled="loading || submitting || recognizing || !hasVisibleIncomeCategories"
+                                                                   :disabled="loading || submitting || recognizing"
                                                                    :enable-filter="true" :filter-placeholder="tt('Find category')" :filter-no-items-text="tt('No available category')"
+                                                                   :add-new-item-text="mode === TransactionEditPageMode.View ? '' : tt('Add Category')"
+                                                                   :add-preset-items-text="mode === TransactionEditPageMode.View ? '' : tt('Use Preset Categories')"
+                                                                   @add-new-item="onAddNewCategory" @add-preset-items="onAddPresetCategories"
                                                                    :show-selection-primary-text="true"
                                                                    :custom-selection-primary-text="getTransactionPrimaryCategoryName(transaction.incomeCategoryId, allCategories[CategoryType.Income])"
                                                                    :custom-selection-secondary-text="getTransactionSecondaryCategoryName(transaction.incomeCategoryId, allCategories[CategoryType.Income])"
@@ -202,8 +208,11 @@
                                                                    secondary-icon-field="icon" secondary-icon-type-field="iconType" secondary-icon-type="category" secondary-color-field="color"
                                                                    secondary-hidden-field="hidden"
                                                                    :readonly="mode === TransactionEditPageMode.View"
-                                                                   :disabled="loading || submitting || recognizing || !hasVisibleTransferCategories"
+                                                                   :disabled="loading || submitting || recognizing"
                                                                    :enable-filter="true" :filter-placeholder="tt('Find category')" :filter-no-items-text="tt('No available category')"
+                                                                   :add-new-item-text="mode === TransactionEditPageMode.View ? '' : tt('Add Category')"
+                                                                   :add-preset-items-text="mode === TransactionEditPageMode.View ? '' : tt('Use Preset Categories')"
+                                                                   @add-new-item="onAddNewCategory" @add-preset-items="onAddPresetCategories"
                                                                    :show-selection-primary-text="true"
                                                                    :custom-selection-primary-text="getTransactionPrimaryCategoryName(transaction.transferCategoryId, allCategories[CategoryType.Transfer])"
                                                                    :custom-selection-secondary-text="getTransactionSecondaryCategoryName(transaction.transferCategoryId, allCategories[CategoryType.Transfer])"
@@ -498,6 +507,9 @@
         </one-column-dialog-layout>
     </v-dialog>
 
+    <category-edit-dialog ref="categoryEditDialog"/>
+    <category-preset-dialog :category-type="currentCategoryType" v-model:show="showCategoryPresetDialog"
+                            @category:saved="onCategoryPresetSaved"/>
     <confirm-dialog ref="confirmDialog"/>
     <snack-bar ref="snackbar" />
     <input ref="pictureInput" type="file" style="display: none" :accept="SUPPORTED_IMAGE_EXTENSIONS" @change="onUploadPicture($event)" />
@@ -507,6 +519,8 @@
 import MapView from '@/components/common/MapView.vue';
 import ConfirmDialog from '@/components/desktop/ConfirmDialog.vue';
 import SnackBar from '@/components/desktop/SnackBar.vue';
+import CategoryEditDialog from '@/views/desktop/categories/list/dialogs/EditDialog.vue';
+import CategoryPresetDialog from '@/views/desktop/categories/list/dialogs/PresetDialog.vue';
 
 import { ref, computed, useTemplateRef, watch, nextTick } from 'vue';
 
@@ -596,6 +610,7 @@ interface TransactionEditResponse {
 type MapViewType = InstanceType<typeof MapView>;
 type ConfirmDialogType = InstanceType<typeof ConfirmDialog>;
 type SnackBarType = InstanceType<typeof SnackBar>;
+type CategoryEditDialogType = InstanceType<typeof CategoryEditDialog>;
 
 const props = defineProps<{
     type: TransactionEditPageType;
@@ -668,6 +683,7 @@ const transactionsStore = useTransactionsStore();
 const transactionTemplatesStore = useTransactionTemplatesStore();
 
 const map = useTemplateRef<MapViewType>('map');
+const categoryEditDialog = useTemplateRef<CategoryEditDialogType>('categoryEditDialog');
 const confirmDialog = useTemplateRef<ConfirmDialogType>('confirmDialog');
 const snackbar = useTemplateRef<SnackBarType>('snackbar');
 const pictureInput = useTemplateRef<HTMLInputElement>('pictureInput');
@@ -701,6 +717,19 @@ const sourceAmountColor = computed<string | undefined>(() => {
 });
 
 const showTransactionTimeInEditPage = computed<boolean>(() => settingsStore.appSettings.showTransactionTimeInEditPage);
+
+const showCategoryPresetDialog = ref<boolean>(false);
+
+// the category type matching the transaction type currently being edited, used by the inline category creation dialogs
+const currentCategoryType = computed<CategoryType>(() => {
+    if (transaction.value.type === TransactionType.Income) {
+        return CategoryType.Income;
+    } else if (transaction.value.type === TransactionType.Transfer) {
+        return CategoryType.Transfer;
+    } else {
+        return CategoryType.Expense;
+    }
+});
 
 const isTransactionModified = computed<boolean>(() => {
     if (mode.value === TransactionEditPageMode.Add) {
@@ -1288,6 +1317,38 @@ function onUploadPicture(event: Event): void {
 
 function onShowDateTimeError(error: string): void {
     snackbar.value?.showError(error);
+}
+
+function onAddNewCategory(): void {
+    categoryEditDialog.value?.open({
+        type: currentCategoryType.value
+    }).then(result => {
+        transactionCategoriesStore.loadAllCategories({ force: true }).then(() => {
+            snackbar.value?.showMessage(result.message);
+        }).catch(error => {
+            if (!error.processed) {
+                snackbar.value?.showError(error);
+            }
+        });
+    }).catch(error => {
+        if (error) {
+            snackbar.value?.showError(error);
+        }
+    });
+}
+
+function onAddPresetCategories(): void {
+    showCategoryPresetDialog.value = true;
+}
+
+function onCategoryPresetSaved(e: { message: string }): void {
+    transactionCategoriesStore.loadAllCategories({ force: true }).then(() => {
+        snackbar.value?.showMessage(e.message);
+    }).catch(error => {
+        if (!error.processed) {
+            snackbar.value?.showError(error);
+        }
+    });
 }
 
 watch(activeTab, (newValue) => {
