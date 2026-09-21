@@ -158,7 +158,7 @@
                                                                    :enable-filter="true" :filter-placeholder="tt('Find category')" :filter-no-items-text="tt('No available category')"
                                                                    :add-new-item-text="mode === TransactionEditPageMode.View ? '' : tt('Add Category')"
                                                                    :add-preset-items-text="mode === TransactionEditPageMode.View ? '' : tt('Use Preset Categories')"
-                                                                   @add-new-item="onAddNewCategory" @add-preset-items="onAddPresetCategories"
+                                                                   @add-new-item="onAddNewCategory($event)" @add-preset-items="onAddPresetCategories"
                                                                    :show-selection-primary-text="true"
                                                                    :custom-selection-primary-text="getTransactionPrimaryCategoryName(transaction.expenseCategoryId, allCategories[CategoryType.Expense])"
                                                                    :custom-selection-secondary-text="getTransactionSecondaryCategoryName(transaction.expenseCategoryId, allCategories[CategoryType.Expense])"
@@ -185,7 +185,7 @@
                                                                    :enable-filter="true" :filter-placeholder="tt('Find category')" :filter-no-items-text="tt('No available category')"
                                                                    :add-new-item-text="mode === TransactionEditPageMode.View ? '' : tt('Add Category')"
                                                                    :add-preset-items-text="mode === TransactionEditPageMode.View ? '' : tt('Use Preset Categories')"
-                                                                   @add-new-item="onAddNewCategory" @add-preset-items="onAddPresetCategories"
+                                                                   @add-new-item="onAddNewCategory($event)" @add-preset-items="onAddPresetCategories"
                                                                    :show-selection-primary-text="true"
                                                                    :custom-selection-primary-text="getTransactionPrimaryCategoryName(transaction.incomeCategoryId, allCategories[CategoryType.Income])"
                                                                    :custom-selection-secondary-text="getTransactionSecondaryCategoryName(transaction.incomeCategoryId, allCategories[CategoryType.Income])"
@@ -212,7 +212,7 @@
                                                                    :enable-filter="true" :filter-placeholder="tt('Find category')" :filter-no-items-text="tt('No available category')"
                                                                    :add-new-item-text="mode === TransactionEditPageMode.View ? '' : tt('Add Category')"
                                                                    :add-preset-items-text="mode === TransactionEditPageMode.View ? '' : tt('Use Preset Categories')"
-                                                                   @add-new-item="onAddNewCategory" @add-preset-items="onAddPresetCategories"
+                                                                   @add-new-item="onAddNewCategory($event)" @add-preset-items="onAddPresetCategories"
                                                                    :show-selection-primary-text="true"
                                                                    :custom-selection-primary-text="getTransactionPrimaryCategoryName(transaction.transferCategoryId, allCategories[CategoryType.Transfer])"
                                                                    :custom-selection-secondary-text="getTransactionSecondaryCategoryName(transaction.transferCategoryId, allCategories[CategoryType.Transfer])"
@@ -1319,9 +1319,14 @@ function onShowDateTimeError(error: string): void {
     snackbar.value?.showError(error);
 }
 
-function onAddNewCategory(): void {
+function onAddNewCategory(parentKey: unknown): void {
+    if (!parentKey) { // a transaction is bound to a secondary category, so a parent is required
+        return;
+    }
+
     categoryEditDialog.value?.open({
-        type: currentCategoryType.value
+        type: currentCategoryType.value,
+        parentId: parentKey as string
     }).then(result => {
         transactionCategoriesStore.loadAllCategories({ force: true }).then(() => {
             snackbar.value?.showMessage(result.message);

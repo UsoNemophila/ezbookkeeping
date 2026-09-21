@@ -44,8 +44,8 @@
             <v-list class="two-column-list-actions" v-if="addPresetItemsText || addNewItemText">
                 <v-list-item class="text-primary" v-if="addPresetItemsText && (!items || !items.length)"
                              @click="emit('addPresetItems')">{{ addPresetItemsText }}</v-list-item>
-                <v-list-item class="text-primary" v-if="addNewItemText"
-                             @click="emit('addNewItem')">{{ addNewItemText }}</v-list-item>
+                <v-list-item class="text-primary" v-if="addNewItemText && items && items.length"
+                             @click="onAddNewItemClicked">{{ addNewItemText }}</v-list-item>
             </v-list>
             <div ref="dropdownMenu" class="two-column-list-container" v-show="filteredItems && filteredItems.length">
                 <div class="primary-list-container">
@@ -139,7 +139,7 @@ const props = defineProps<DesktopTwoColumnListItemSelectionProps>();
 
 const emit = defineEmits<{
     (e: 'update:modelValue', value: unknown): void;
-    (e: 'addNewItem'): void;
+    (e: 'addNewItem', parentKey: unknown): void;
     (e: 'addPresetItems'): void;
 }>();
 
@@ -250,6 +250,12 @@ function updateMenuPosition(): void {
 function onPrimaryItemClicked(item: unknown): void {
     updateCurrentPrimaryValue(currentPrimaryValue, item);
     updateMenuPosition();
+}
+
+// emits the key of the primary item to create a sub item under: the selected one, or the first one when nothing is selected yet
+function onAddNewItemClicked(): void {
+    const primaryItem = (selectedPrimaryItem.value ?? props.items?.[0]) as Record<string, unknown> | undefined;
+    emit('addNewItem', primaryItem && props.primaryKeyField ? primaryItem[props.primaryKeyField] : undefined);
 }
 
 function onSecondaryItemClicked(subItem: unknown): void {
